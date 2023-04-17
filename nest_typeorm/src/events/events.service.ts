@@ -1,13 +1,16 @@
-import { Repository } from 'typeorm';
+import { LessThan, MoreThan, Repository } from 'typeorm';
 import { Get, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Event } from './entities/event.entity';
+import { Workshop } from './entities/workshop.entity';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectRepository(Event)
     private eventRepository: Repository<Event>,
+    @InjectRepository(Workshop)
+    private workshopRepository: Repository<Workshop>,
   ) {}
 
   getWarmupEvents() {
@@ -168,6 +171,20 @@ export class EventsService {
      */
   @Get('futureevents')
   async getFutureEventWithWorkshops() {
+    const currentDate = new Date();
+    const events = await this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.workshops', 'workshop')
+      .where('workshop.start > :currentDate', {
+        currentDate: currentDate.toISOString(),
+      })
+      .andWhere('event.createdAt < :currentDate', {
+        currentDate: currentDate.toISOString(),
+      })
+      .groupBy('event.id')
+      .getMany();
+
+    return events;
     throw new Error('TODO task 2');
   }
 }
