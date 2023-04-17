@@ -86,6 +86,33 @@ export class MenuItemsService {
     ]
   */
   async getMenuItems() {
+    // Fetch all menu items from the database
+    const allMenuItems = await this.menuItemRepository.find();
+
+    // Create a map of menu item id to menu item object
+    const menuItemMap = new Map<number, MenuItem>();
+    for (const menuItem of allMenuItems) {
+      menuItem.children = [];
+      menuItemMap.set(menuItem.id, menuItem);
+    }
+
+    // Create the tree structure by adding each menu item as a child of its parent
+    const rootMenuItems: MenuItem[] = [];
+    for (const menuItem of allMenuItems) {
+      const parentId = menuItem.parentId;
+      if (parentId === null) {
+        // This is a root level menu item
+        rootMenuItems.push(menuItem);
+      } else {
+        // This is a child level menu item
+        const parentMenuItem = menuItemMap.get(parentId);
+        if (parentMenuItem) {
+          parentMenuItem.children.push(menuItem);
+        }
+      }
+    }
+
+    return rootMenuItems;
     throw new Error('TODO in task 3');
   }
 }
